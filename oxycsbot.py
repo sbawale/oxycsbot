@@ -1,102 +1,167 @@
 #!/usr/bin/env python3
-"""A simple chatbot that directs students to office hours of CS professors."""
+"""A simple chatbot that debates with the user about veganism"""
 
+import random # https://pynative.com/python-random-choice/
 from chatbot import ChatBot
 
-
 class OxyCSBot(ChatBot):
-    """A simple chatbot that directs students to office hours of CS professors."""
 
     STATES = [
         'waiting',
-        'specific_faculty',
-        'unknown_faculty',
-        'unrecognized_faculty',
+        # 'neutral_stance',
+        'pro_vegan_stance',
+        'anti_vegan_stance',
     ]
 
     TAGS = {
         # intent
-        'office hours': 'office-hours',
-        'OH': 'office-hours',
-        'help': 'office-hours',
+        'veganism': 'veganism',
+        'vegan': 'veganism',
+        'vegetarian': 'veganism',
+        'non-animal products': 'veganism',
+        'diet': 'veganism',
+        'food': 'veganism',
 
-        # professors
-        'kathryn': 'kathryn',
-        'leonard': 'kathryn',
-        'justin': 'justin',
-        'li': 'justin',
-        'jeff': 'jeff',
-        'miller': 'jeff',
-        'celia': 'celia',
-        'hsing-hau': 'hsing-hau',
-        'umit': 'umit',
-        'yalcinalp': 'umit',
+        # DETERMINE BOT STANCE BASED ON USER STANCE
+
+        # pro-vegan
+        'pro': 'pro_vegan_stance',
+        'animal cruelty': 'pro_vegan_stance', # maybe instead of stance do the specific argument instead?
+        'healthy': 'pro_vegan_stance',
+        'better for you': 'pro_vegan_stance',
+        'poverty': 'pro_vegan_stance',
+        'alleviate': 'pro_vegan_stance',
+        'global warming': 'pro_vegan_stance',
+        'environmentalism': 'pro_vegan_stance',
+        'environmental': 'pro_vegan_stance',
+        'save the environment': 'pro_vegan_stance',
+        'eco-friendly': 'pro_vegan_stance',
+        'sustainable': 'pro_vegan_stance',
+        'ethics': 'pro_vegan_stance',
+        'ethical': 'pro_vegan_stance',
+        'unethical': 'pro_vegan_stance',
+        'eco food': 'pro_vegan_stance',
+
+        # anti-vegan
+        'con': 'anti_vegan_stance',
+        'anti': 'anti_vegan_stance',
+        'i like meat': 'anti_vegan_stance',
+        'job loss': 'anti_vegan_stance',
+        'loss of jobs': 'anti_vegan_stance',
+        'unemployment': 'anti_vegan_stance',
+        'circle of life': 'anti_vegan_stance',
+        'soil erosion': 'anti_vegan_stance',
+        'agricultural stress': 'anti_vegan_stance',
+        'omnivore': 'anti_vegan_stance',
+        'unnatural': 'anti_vegan_stance',
+        'meat is yummy': 'anti_vegan_stance',
+        'burgers': 'anti_vegan_stance',
+        'steak': 'anti_vegan_stance',
+        'ribs': 'anti_vegan_stance',
+        'barbecue': 'anti_vegan_stance',
+        'bbq': 'anti_vegan_stance',
+        'against nature' : 'anti_vegan_stance',
+
+        # neutral tags?
+
+        # GIVE ARGUMENT DEPENDING ON THE USER'S RESPONSE
+        # ex. 'like burgers': 'arg_a4', ...
 
         # generic
         'thanks': 'thanks',
+        'thank you': 'thanks',
         'okay': 'success',
         'bye': 'success',
         'yes': 'yes',
+        'yeah' : 'yes',
         'yep': 'yes',
-        'no': 'no',
-        'nope': 'no',
+        'yeah': 'success',
+        # 'no': 'no',
+        # 'nope': 'no',
+        'not really': 'failure',
+        'never': 'failure',
+        'probably no': 'failure',
+        'might' : 'success',
+        'possibly': 'success',
+        'maybe': 'success',
+        'of course': 'success',
+        'why not': 'success',
+        'could be': 'success',
+        'have a great day': 'success',
+        'I agree': 'success',
+        'I am not sure': 'failure',
+        'I do not agree': 'failure',
+        'I am vegan': 'success',
+        'I am not vegan': 'failure',
     }
 
-    PROFESSORS = [
-        'celia',
-        'hsing-hau',
-        'jeff',
-        'justin',
-        'kathryn',
-        'umit',
+    STANCES = [
+        'pro_vegan',
+        'anti_vegan',
+        # 'neutral',
     ]
 
+    # bot has pro-vegan stance
+    ARGS_PRO = [
+         "Being vegan is very good for your health",
+         "Veganism impacts the environment a lot",
+         "Have to write something here",
+         "Aren't you against animal cruelty?",
+        ]
+
+    # bot has anti-vegan stance
+    ARGS_CON = {
+        'arg_agricultural_stress': "Help me out here" ,
+        'arg_circle_of_life': "Well, I believe that there is a natural circle of life.",
+        'arg_job_loss': "Have you ever thought about how many people will loose their jobs?",
+        'arg_meat_taste': "Don't you know the taste of the meat? Would you ever be able to give it up?",
+    }
+
+    """
+    ALL_ARGS = {
+        'arg_p1': 'arg_health',
+        'arg_p2': 'arg_environment',
+        'arg_p3': 'arg_poverty',
+        'arg_p4': 'arg_animal_rights',
+        'arg_a1': 'arg_agricultural_stress',
+        'arg_a2': 'arg_circle_of_life',
+        'arg_a3': 'arg_job_loss',
+        'arg_a4': 'arg_meat_taste',
+    }
+
+
+    FILLER_STATEMENTS = [
+        'Yeah, I’m not buying it. Could you elaborate?',
+        'Hmm, okay I see your point. Go on.',
+    ]
+    """
+
+
+
     def __init__(self):
-        """Initialize the OxyCSBot.
+        """Initialize the OxyCSBot."""
 
-        The `professor` member variable stores whether the target professor has
-        been identified.
-        """
         super().__init__(default_state='waiting')
-        self.professor = None
+        self.stance = None # bot's stance is determined by user stance
+        self.used_arguments = [] # keeps track of which arguments have been used to avoid repetition
 
-    def get_office_hours(self, professor):
-        """Find the office hours of a professor.
-
-        Arguments:
-            professor (str): The professor of interest.
-
-        Returns:
-            str: The office hours of that professor.
-        """
-        office_hours = {
-            'celia': 'unknown',
-            'hsing-hau': 'MW 3:30-4:30pm; F 11:45am-12:45pm',
-            'jeff': 'W 4-5pm; Th 12:50-1:50pm; F 4-5pm',
-            'justin': 'T 3-4pm; W 2-3pm; F 4-5pm',
-            'kathryn': 'MF 4-5:30pm',
-            'umit': 'M 3-5pm; W 10am-noon, 3-5pm',
-        }
-        return office_hours[professor]
-
-    def get_office(self, professor):
-        """Find the office of a professor.
+    """
+    def get_args_pro(self, args_pro):
+        Pick a pro argument.
 
         Arguments:
-            professor (str): The professor of interest.
 
         Returns:
-            str: The office of that professor.
-        """
-        office = {
-            'celia': 'Swan 232',
-            'hsing-hau': 'Swan 302',
-            'jeff': 'Fowler 321',
-            'justin': 'Swan B102',
-            'kathryn': 'Swan B101',
-            'umit': 'Swan 226',
+            str: The argument.
+
+        args_con = {
+            'arg_health' : "Being vegan is very good for your health",
+            'arg_environment' : "Veganism impacts the environemtn a lot",
+            'arg_poverty' : "Have to write something here",
+            'arg_animal_rights' : "Aren't you against the animal cruelty?",
         }
-        return office[professor]
+        return args_con, "What is your opinion"?
+    """
 
     # "waiting" state functions
 
@@ -110,111 +175,143 @@ class OxyCSBot(ChatBot):
         Returns:
             str: The message to send to the user.
         """
-        self.professor = None
-        if 'office-hours' in tags:
-            for professor in self.PROFESSORS:
-                if professor in tags:
-                    self.professor = professor
-                    return self.go_to_state('specific_faculty')
-            return self.go_to_state('unknown_faculty')
+        self.stance = None
+        self.used_arguments = []
+
+        # Use tags and message to determine user stance, then define bot's stance as the opposite
+        # If user is neutral/has no opinion, the bot will randomly choose between pro and con
+
+        if 'veganism' in tags or 'anti_vegan_stance' in tags or 'pro_vegan_stance' in tags: #we might wanna delete this part, as it is unnecessary, the conversation is already about veganism
+            for stance in self.STANCES:
+                # If user is pro-vegan, bot takes anti-vegan stance
+                if 'pro_vegan_stance' in tags:
+                    self.stance = 'anti_vegan'
+                    print("is in pro vegan stance")
+                    return self.go_to_state('anti_vegan_stance')
+
+                    # Determine the first argument the bot will use, add to used_arguments
+                    #
+                    #return self.go_to_state('anti_vegan_stance')
+
+                # If user is anti-vegan, bot takes pro-vegan stance
+                elif 'anti_vegan_stance' in tags:
+                    self.stance = 'pro_vegan'
+                    print("is in anti vegan stance")
+                    return self.go_to_state('pro_vegan_stance')
+
+                # If user is neutral, bot chooses randomly between pro and anti vegan stances
+                else:
+                    # Choose stance randomly
+                    self.stance = random.choice(STANCES)
+
+                    if self.stance = 'pro_vegan':
+                        return self.go_to_state('pro_vegan_stance')
+                    else:
+                        return self.go_to_state('anti_vegan_stance')
+
         elif 'thanks' in tags:
             return self.finish('thanks')
         else:
             return self.finish('confused')
 
-    # "specific_faculty" state functions
 
-    def on_enter_specific_faculty(self):
-        """Send a message when entering the "specific_faculty" state."""
-        response = '\n'.join([
-            f"{self.professor.capitalize()}'s office hours are {self.get_office_hours(self.professor)}",
-            'Do you know where their office is?',
-        ])
+    # ******************** GENERAL STATES (may not be necessary?) ********************
+
+    # This would be the default 'waiting' state
+    #def wait_for_user_response(self, message, tags):
+        #response = "testing, send help"
+        #return response
+
+
+    # def get_first_arg(self, stance):
+    #         if stance == 'pro_vegan_stance':
+    #             # choose from ARGS_PRO
+    #         else
+    #             # choose from ARGS_CON
+    #     return argument
+
+    # def get_next_arg(self, stance):
+    #     return argument
+
+    #def get_neutral_statement(self):
+        # Choose a neutral statement randomly
+        #response = "testing, send help"
+        #return response
+
+    # def end_convo(self):
+    #     return something
+
+
+    # ******************** PRO-VEGAN STATES ********************
+
+    def on_enter_pro_vegan_stance(self):
+        # response = '\n'.join([
+        #     random.choice(list(ARGS_PRO.keys())),
+        #     'What do you think?',
+        # ])
+        #current_arg = random.choice(ARGS_PRO)
+        #test = "in on_enter_pro_vegan_stance"
+        return "yeses"
+        #print(random.choice(ARGS_PRO))
+        #
+
+    def respond_from_pro_vegan_stance(self, message, tags):
+
+        # I think this is the equivalent of a "wait" state, it's just specific to the stance
+        # Get current argument
+        #current_arg = random.choice(ARGS_PRO)
+
+        # Check against used arguments
+        #while current_arg in self.used_arguments:
+        # current_arg = random.choice(ARGS_PRO)
+
+        #if ARGS_PRO in used_arguments:
+
+        # Add random neutral statement if used_arguments has 3 elements
+
+        # If there are still arguments, go to wait_for_user_response state
+
+        # If all arguments are used, end conversation
+
+        test = "in respond_from_pro_vegan_stance"
+        return test
+
+
+    # ******************** ANTI-VEGAN STATES ********************
+
+    def on_enter_anti_vegan_stance(self):
+        # response = '\n'.join([
+        #     random.choice(list(ARGS_CON.keys())),
+        #     'What do you think?',
+        # ])
+        response = "in on_enter_anti_vegan_stance"
         return response
 
-    def respond_from_specific_faculty(self, message, tags):
-        """Decide what state to go to from the "specific_faculty" state.
+    def respond_from_anti_vegan_stance(self, message, tags):
+        response = "in respond_from_anti_vegan_stance"
+        # response = '\n'.join([
+        #     random.choice(list(ARGS_CON.keys())),
+        #     'What do you think?',
+        # ])
+        return response
 
-        Parameters:
-            message (str): The incoming message.
-            tags (Mapping[str, int]): A count of the tags that apply to the message.
 
-        Returns:
-            str: The message to send to the user.
-        """
-        if 'yes' in tags:
-            return self.finish('success')
-        else:
-            return self.finish('location')
 
-    # "unknown_faculty" state functions
-
-    def on_enter_unknown_faculty(self):
-        """Send a message when entering the "unknown_faculty" state."""
-        return "Who's office hours are you looking for?"
-
-    def respond_from_unknown_faculty(self, message, tags):
-        """Decide what state to go to from the "unknown_faculty" state.
-
-        Parameters:
-            message (str): The incoming message.
-            tags (Mapping[str, int]): A count of the tags that apply to the message.
-
-        Returns:
-            str: The message to send to the user.
-        """
-        for professor in self.PROFESSORS:
-            if professor in tags:
-                self.professor = professor
-                return self.go_to_state('specific_faculty')
-        return self.go_to_state('unrecognized_faculty')
-
-    # "unrecognized_faculty" state functions
-
-    def on_enter_unrecognized_faculty(self):
-        """Send a message when entering the "unrecognized_faculty" state."""
-        return ' '.join([
-            "I'm not sure I understand - are you looking for",
-            "Celia, Hsing-hau, Jeff, Justin, Kathryn, or Umit?",
-        ])
-
-    def respond_from_unrecognized_faculty(self, message, tags):
-        """Decide what state to go to from the "unrecognized_faculty" state.
-
-        Parameters:
-            message (str): The incoming message.
-            tags (Mapping[str, int]): A count of the tags that apply to the message.
-
-        Returns:
-            str: The message to send to the user.
-        """
-        for professor in self.PROFESSORS:
-            if professor in tags:
-                self.professor = professor
-                return self.go_to_state('specific_faculty')
-        return self.finish('fail')
-
-    # "finish" functions
-
+    # ******************** FINISH STATES ********************
+    # Send a message then go to the default state (waiting)
     def finish_confused(self):
-        """Send a message and go to the default state."""
-        return "Sorry, I'm just a simple bot that can't understand much. You can ask me about office hours though!"
-
-    def finish_location(self):
-        """Send a message and go to the default state."""
-        return f"{self.professor.capitalize()}'s office is in {self.get_office(self.professor)}"
-
-    def finish_success(self):
-        """Send a message and go to the default state."""
-        return 'Great, let me know if you need anything else!'
-
-    def finish_fail(self):
-        """Send a message and go to the default state."""
-        return "I've tried my best but I still don't understand. Maybe try asking other students?"
+        return "Tell me something about your diet. What do you think of veganism?"
 
     def finish_thanks(self):
-        """Send a message and go to the default state."""
-        return "You're welcome!"
+        return "You're welcome! It was nice talking to you!"
+
+
+    def finish_success(self):
+        return 'Great, I am glad you can see my side of the argument.'
+
+    def finish_fail(self):
+        return "You make some good points. I have to say I think you are right about this."
+
 
 
 if __name__ == '__main__':
